@@ -1,4 +1,6 @@
 export default defineNuxtConfig({
+  modules: ['@nuxtjs/tailwindcss'],
+
   nitro: {
     routeRules: {
       "/api/**": { cors: true }
