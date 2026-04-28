@@ -18,13 +18,16 @@ const sendAction = async (type) => {
       method: 'POST',
       body: {
         school: school.value,
-        app: selectedApp.value,
+        app: selectedApp.value.toLowerCase(), // 🔥 IMPORTANT
         action: type
       }
     })
 
-    message.value = `${selectedApp.value} ${type === 'error' ? 'failed ❌' : 'used successfully ✅'}`
+    message.value = `${selectedApp.value} ${
+      type === 'error' ? 'failed ❌' : 'used successfully ✅'
+    }`
   } catch (err) {
+    console.error(err)
     message.value = "Something went wrong"
   }
 }
@@ -35,42 +38,29 @@ const sendAction = async (type) => {
     <div class="bg-white shadow-lg rounded-2xl p-6 w-full max-w-md">
 
       <h1 class="text-2xl font-bold text-center mb-6">
-         Dummy School App
+        Dummy School App
       </h1>
 
-      <!-- School Input -->
       <input
         v-model="school"
         placeholder="Enter School Name"
-        class="w-full border rounded-lg p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        class="w-full border rounded-lg p-2 mb-4"
       />
 
-      <!-- App Select -->
-      <select
-        v-model="selectedApp"
-        class="w-full border rounded-lg p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      >
+      <select v-model="selectedApp" class="w-full border rounded-lg p-2 mb-4">
         <option v-for="app in apps" :key="app">{{ app }}</option>
       </select>
 
-      <!-- Buttons -->
       <div class="flex gap-3 mb-4">
-        <button
-          @click="sendAction('use')"
-          class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
-        >
+        <button @click="sendAction('use')" class="flex-1 bg-green-500 text-white py-2 rounded-lg">
           Use App
         </button>
 
-        <button
-          @click="sendAction('error')"
-          class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
-        >
+        <button @click="sendAction('error')" class="flex-1 bg-red-500 text-white py-2 rounded-lg">
           Generate Error
         </button>
       </div>
 
-      <!-- Message -->
       <p class="text-center text-sm text-gray-600">
         {{ message }}
       </p>

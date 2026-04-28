@@ -1,30 +1,34 @@
-import { sendLog } from '~/utils/cloudwatch'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!
+)
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
   const body = await readBody(event)
 
   const { school, app, action } = body
 
-  let status = "Healthy"
+  const status = action === "error" ? "error" : "success"
 
-  if (action === "error") {
-    status = "Down"
-  }
-
-  const data = {
+  const logData = {
     school,
-    service: app,
+    service: app,              // admissions, billing etc
     status,
     latency: Math.floor(Math.random() * 500),
-    requests: Math.floor(Math.random() * 2000),
-    timestamp: new Date()
+    createdAt: new Date()
   }
 
-  await sendLog(data, config)
+  const { error } = await supabase.from('Log').insert([logData])
+
+  if (error) {
+    console.error("DB Error:", error)
+    return { success: false }
+  }
 
   return {
-    message: `${app} ${action === "error" ? "failed" : "used"} successfully`,
-    data
+    success: true,
+    data: logData
   }
 })
