@@ -1,13 +1,17 @@
 <script setup>
 import { ref } from 'vue'
+import { createClient } from '@supabase/supabase-js'
 
 const school = ref('')
 const service = ref('Admissions')
 const loading = ref(false)
 const lastResult = ref(null)
 
-const MONITORING_URL = 'https://main.d1o8f3eh3hg0bw.amplifyapp.com'
-
+//  ADD YOUR KEYS HERE
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+)
 const sendLog = async (statusCode) => {
   if (!school.value.trim()) {
     alert('Please enter a school name first!')
@@ -20,31 +24,30 @@ const sendLog = async (statusCode) => {
   const payload = {
     school: school.value.trim(),
     service: service.value,
-    status: statusCode,
+    status: statusCode === 200 ? 'healthy' : 'error',
     latency: Math.floor(Math.random() * 300) + 50
   }
 
   try {
-    const res = await fetch(`${MONITORING_URL}/api/collect`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
+    const { error } = await supabase
+      .from('logs')
+      .insert([payload])
 
-    const data = await res.json()
+    if (error) throw error
 
-    if (data.error) {
-      lastResult.value = { type: 'error', message: `Failed: ${data.error}` }
-    } else {
-      lastResult.value = {
-        type: statusCode === 200 ? 'success' : 'error',
-        message: statusCode === 200
-          ? `✅ Healthy log sent for "${payload.school}" → ${service.value}`
-          : `🔴 Error log sent for "${payload.school}" → ${service.value}`
-      }
+    lastResult.value = {
+      type: statusCode === 200 ? 'success' : 'error',
+      message: statusCode === 200
+        ? `✅ Healthy log sent for "${payload.school}" → ${service.value}`
+        : `🔴 Error log sent for "${payload.school}" → ${service.value}`
     }
+
   } catch (err) {
-    lastResult.value = { type: 'error', message: `Network error: ${err.message}` }
+    console.error(err)
+    lastResult.value = {
+      type: 'error',
+      message: `❌ ${err.message}`
+    }
   } finally {
     loading.value = false
   }
@@ -56,7 +59,9 @@ const sendLog = async (statusCode) => {
   <div class="bg-gray-800 p-8 rounded-xl shadow-lg w-[420px]">
 
     <h1 class="text-2xl font-bold mb-2 text-center">Dummy School App</h1>
-    <p class="text-gray-400 text-sm text-center mb-6">Generate logs for the monitoring dashboard</p>
+    <p class="text-gray-400 text-sm text-center mb-6">
+      Generate logs for the monitoring dashboard
+    </p>
 
     <label class="block text-sm text-gray-400 mb-1">School Name</label>
     <input
@@ -68,7 +73,7 @@ const sendLog = async (statusCode) => {
     <label class="block text-sm text-gray-400 mb-1">Service</label>
     <select
       v-model="service"
-      class="w-full p-2 mb-6 rounded bg-gray-700 border border-gray-600 focus:outline-none"
+      class="w-full p-2 mb-6 rounded bg-gray-700 border border-gray-600"
     >
       <option value="Admissions">Admissions</option>
       <option value="Attendance">Attendance</option>
@@ -78,19 +83,17 @@ const sendLog = async (statusCode) => {
 
     <div class="flex gap-3">
       <button
-        type="button"
         :disabled="loading"
         @click.prevent="sendLog(200)"
-        class="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded font-semibold transition-colors"
+        class="flex-1 bg-green-600 hover:bg-green-700 p-3 rounded font-semibold"
       >
         {{ loading ? 'Sending...' : '✅ Generate Healthy' }}
       </button>
 
       <button
-        type="button"
         :disabled="loading"
         @click.prevent="sendLog(500)"
-        class="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded font-semibold transition-colors"
+        class="flex-1 bg-red-600 hover:bg-red-700 p-3 rounded font-semibold"
       >
         {{ loading ? 'Sending...' : '🔴 Generate Error' }}
       </button>
@@ -98,7 +101,9 @@ const sendLog = async (statusCode) => {
 
     <div
       v-if="lastResult"
-      :class="lastResult.type === 'success' ? 'bg-green-900 border-green-500' : 'bg-red-900 border-red-500'"
+      :class="lastResult.type === 'success'
+        ? 'bg-green-900 border-green-500'
+        : 'bg-red-900 border-red-500'"
       class="mt-4 p-3 rounded border text-sm"
     >
       {{ lastResult.message }}
