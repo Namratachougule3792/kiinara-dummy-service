@@ -7,11 +7,6 @@ const service = ref('Admissions')
 const loading = ref(false)
 const lastResult = ref(null)
 
-//  ADD YOUR KEYS HERE
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
-)
 const sendLog = async (statusCode) => {
   if (!school.value.trim()) {
     alert('Please enter a school name first!')
