@@ -1,24 +1,12 @@
-import pkg from '@prisma/client'
-
-const prisma = new (pkg as any).PrismaClient()
-
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-
-  const { service, status, latency } = body
-
   try {
-    await prisma.logs.create({
-      data: {
-        service,
-        status,
-        latency
-      }
-    })
+    const body = await readBody(event)
+
+    console.log("LOG RECEIVED:", body)
 
     return { success: true }
-  } catch (error) {
-    console.error('Log insert error:', error)
+  } catch (err) {
+    console.error(err)
     return { success: false }
   }
 })
