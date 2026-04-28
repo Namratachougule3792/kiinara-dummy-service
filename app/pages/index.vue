@@ -6,11 +6,11 @@ const service = ref('Admissions')
 const loading = ref(false)
 const lastResult = ref(null)
 
+// ⚠️ IMPORTANT: use CURRENT monitoring app URL
 const MONITORING_URL = 'https://main.d1o8f3eh3hg0bw.amplifyapp.com'
-
 const sendLog = async (statusCode) => {
   if (!school.value.trim()) {
-    alert('Please enter a school name first!')
+    alert('Enter school name')
     return
   }
 
@@ -20,7 +20,7 @@ const sendLog = async (statusCode) => {
   const payload = {
     school: school.value.trim(),
     service: service.value,
-    status: statusCode,
+    status: statusCode, // 200 / 500
     latency: Math.floor(Math.random() * 300) + 50
   }
 
@@ -33,16 +33,11 @@ const sendLog = async (statusCode) => {
 
     const data = await res.json()
 
-    if (data.error) {
-      lastResult.value = { type: 'error', message: data.error }
-    } else {
-      lastResult.value = {
-        type: statusCode === 200 ? 'success' : 'error',
-        message:
-          statusCode === 200
-            ? `✅ Healthy log sent`
-            : `🔴 Error log sent`
-      }
+    if (data.error) throw new Error(data.error)
+
+    lastResult.value = {
+      type: statusCode === 200 ? 'success' : 'error',
+      message: statusCode === 200 ? 'Healthy sent' : 'Error sent'
     }
   } catch (err) {
     lastResult.value = {
@@ -56,12 +51,13 @@ const sendLog = async (statusCode) => {
 </script>
 
 <template>
-<div class="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-  <div class="bg-gray-800 p-8 rounded-xl w-[400px]">
+<div class="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+  <div class="bg-gray-800 p-6 rounded w-[350px]">
 
-    <input v-model="school" placeholder="School" class="w-full p-2 mb-4 bg-gray-700 rounded" />
+    <input v-model="school" placeholder="School"
+      class="w-full mb-3 p-2 bg-gray-700 rounded" />
 
-    <select v-model="service" class="w-full p-2 mb-4 bg-gray-700 rounded">
+    <select v-model="service" class="w-full mb-3 p-2 bg-gray-700 rounded">
       <option>Admissions</option>
       <option>Attendance</option>
       <option>Billing</option>
@@ -69,11 +65,11 @@ const sendLog = async (statusCode) => {
     </select>
 
     <div class="flex gap-2">
-      <button @click="sendLog(200)" class="bg-green-600 p-2 rounded w-full">Healthy</button>
-      <button @click="sendLog(500)" class="bg-red-600 p-2 rounded w-full">Error</button>
+      <button @click="sendLog(200)" class="bg-green-600 p-2 w-full rounded">Healthy</button>
+      <button @click="sendLog(500)" class="bg-red-600 p-2 w-full rounded">Error</button>
     </div>
 
-    <p v-if="lastResult" class="mt-4">{{ lastResult.message }}</p>
+    <p v-if="lastResult" class="mt-3 text-sm">{{ lastResult.message }}</p>
 
   </div>
 </div>
