@@ -1,89 +1,41 @@
 <script setup>
 import { ref } from 'vue'
-import { createClient } from '@supabase/supabase-js'
-
-const config = useRuntimeConfig()
-
-const supabase = createClient(
-  config.public.supabaseUrl,
-  config.public.supabaseKey
-)
 
 const school = ref('')
-const selectedApp = ref('Admissions')
-const message = ref('')
+const service = ref('Admissions')
 
-const apps = ['Admissions', 'Attendance', 'Billing', 'Identity']
-
-const sendAction = async (type) => {
-  if (!school.value) {
-    message.value = "Enter school name"
-    return
-  }
-
-  try {
-    const { error } = await supabase.from('Log').insert([
-      {
-        service: selectedApp.value,
-        status: type === 'error' ? 'Down' : 'Healthy',
-        latency: Math.floor(Math.random() * 500),
-        createdAt: new Date()
-      }
-    ])
-
-    if (error) throw error
-
-    message.value = `${selectedApp.value} ${
-      type === 'error' ? 'failed ❌' : 'used successfully ✅'
-    }`
-  } catch (err) {
-    console.error(err)
-    message.value = "Error sending data ❌"
-  }
+const sendLog = async (status) => {
+  await fetch('https://main.d1o8f3eh3hg0bw.amplifyapp.com/api/collect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      school: school.value,
+      service: service.value,
+      status,
+      latency: Math.floor(Math.random() * 300)
+    })
+  })
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 flex items-center justify-center">
-    <div class="bg-white shadow-lg rounded-2xl p-6 w-full max-w-md">
+<div style="padding:40px">
 
-      <h1 class="text-2xl font-bold text-center mb-6">
-        Dummy School App
-      </h1>
+<h2>Dummy School App</h2>
 
-      <input
-        v-model="school"
-        placeholder="Enter School Name"
-        class="w-full border rounded-lg p-2 mb-4"
-      />
+<input v-model="school" placeholder="Enter School Name" />
 
-      <select
-        v-model="selectedApp"
-        class="w-full border rounded-lg p-2 mb-4"
-      >
-        <option v-for="app in apps" :key="app">{{ app }}</option>
-      </select>
+<select v-model="service">
+  <option>Admissions</option>
+  <option>Attendance</option>
+  <option>Billing</option>
+  <option>Identity</option>
+</select>
 
-      <div class="flex gap-3 mb-4">
-        <button
-          @click="sendAction('use')"
-          class="flex-1 bg-green-500 text-white py-2 rounded-lg"
-        >
-          Use App
-        </button>
+<br/><br/>
 
-        <button
-          @click="sendAction('error')"
-          class="flex-1 bg-red-500 text-white py-2 rounded-lg"
-        >
-          Generate Error
-        </button>
-      </div>
+<button @click="sendLog(200)">Send Healthy</button>
+<button @click="sendLog(500)">Send Error</button>
 
-      <p class="text-center text-sm text-gray-600">
-        {{ message }}
-      </p>
-
-    </div>
-  </div>
+</div>
 </template>
