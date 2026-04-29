@@ -6,8 +6,9 @@ const service = ref('Admissions')
 const loading = ref(false)
 const lastResult = ref(null)
 
-// ⚠️ IMPORTANT: use CURRENT monitoring app URL
+// Your monitoring app URL — no trailing slash
 const MONITORING_URL = 'https://main.d1o8f3eh3hg0bw.amplifyapp.com'
+
 const sendLog = async (statusCode) => {
   if (!school.value.trim()) {
     alert('Enter school name')
@@ -20,29 +21,42 @@ const sendLog = async (statusCode) => {
   const payload = {
     school: school.value.trim(),
     service: service.value,
-    status: statusCode, // 200 / 500
+    status: statusCode,
     latency: Math.floor(Math.random() * 300) + 50
   }
 
   try {
     const res = await fetch(`${MONITORING_URL}/api/collect`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(payload)
     })
 
+    if (!res.ok) {
+      const text = await res.text()
+      lastResult.value = { type: 'error', message: `Server error ${res.status}: ${text}` }
+      return
+    }
+
     const data = await res.json()
 
-    if (data.error) throw new Error(data.error)
-
-    lastResult.value = {
-      type: statusCode === 200 ? 'success' : 'error',
-      message: statusCode === 200 ? 'Healthy sent' : 'Error sent'
+    if (data.error) {
+      lastResult.value = { type: 'error', message: `Failed: ${data.error}` }
+    } else {
+      lastResult.value = {
+        type: statusCode === 200 ? 'success' : 'warning',
+        message: statusCode === 200
+          ? `✅ Healthy log sent! School: "${payload.school}" | Service: ${service.value}`
+          : `🔴 Error log sent! School: "${payload.school}" | Service: ${service.value}`
+      }
     }
   } catch (err) {
     lastResult.value = {
       type: 'error',
-      message: `Network error: ${err.message}`
+      message: `Network error: ${err.message}. Check MONITORING_URL and CORS settings.`
     }
   } finally {
     loading.value = false
@@ -51,25 +65,61 @@ const sendLog = async (statusCode) => {
 </script>
 
 <template>
-<div class="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-  <div class="bg-gray-800 p-6 rounded w-[350px]">
+<div class="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+  <div class="bg-gray-800 p-8 rounded-xl shadow-lg w-[440px]">
 
-    <input v-model="school" placeholder="School"
-      class="w-full mb-3 p-2 bg-gray-700 rounded" />
+    <h1 class="text-2xl font-bold mb-1 text-center">Dummy School App</h1>
+    <p class="text-gray-400 text-sm text-center mb-6">Generate logs for the monitoring dashboard</p>
 
-    <select v-model="service" class="w-full mb-3 p-2 bg-gray-700 rounded">
-      <option>Admissions</option>
-      <option>Attendance</option>
-      <option>Billing</option>
-      <option>Identity</option>
+    <label class="block text-sm text-gray-400 mb-1">School Name</label>
+    <input
+      v-model="school"
+      placeholder="e.g. Springfield High"
+      class="w-full p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-400 text-white"
+    />
+
+    <label class="block text-sm text-gray-400 mb-1">Service</label>
+    <select
+      v-model="service"
+      class="w-full p-3 mb-6 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none text-white"
+    >
+      <option value="Admissions">Admissions</option>
+      <option value="Attendance">Attendance</option>
+      <option value="Billing">Billing</option>
+      <option value="Identity">Identity</option>
     </select>
 
-    <div class="flex gap-2">
-      <button @click="sendLog(200)" class="bg-green-600 p-2 w-full rounded">Healthy</button>
-      <button @click="sendLog(500)" class="bg-red-600 p-2 w-full rounded">Error</button>
+    <div class="flex gap-3">
+      <button
+        type="button"
+        :disabled="loading"
+        @click.prevent="sendLog(200)"
+        class="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded-lg font-semibold transition-colors"
+      >
+        {{ loading ? 'Sending...' : '✅ Generate Healthy' }}
+      </button>
+
+      <button
+        type="button"
+        :disabled="loading"
+        @click.prevent="sendLog(500)"
+        class="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded-lg font-semibold transition-colors"
+      >
+        {{ loading ? 'Sending...' : '🔴 Generate Error' }}
+      </button>
     </div>
 
-    <p v-if="lastResult" class="mt-3 text-sm">{{ lastResult.message }}</p>
+    <div
+      v-if="lastResult"
+      :class="{
+        'bg-green-900 border-green-600': lastResult.type === 'success',
+        'bg-yellow-900 border-yellow-600': lastResult.type === 'warning',
+        'bg-red-900 border-red-600': lastResult.type === 'error'
+      }"
+      class="mt-4 p-3 rounded-lg border text-sm"
+    >
+      {{ lastResult.message }}
+    </div>
 
   </div>
 </div>
