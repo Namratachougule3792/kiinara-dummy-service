@@ -7,7 +7,6 @@ const loadingHealthy = ref(false)
 const loadingError = ref(false)
 const lastResult = ref(null)
 
-// Hardcode the monitoring URL directly — no server route needed
 const MONITORING_URL = 'https://main.d1o8f3eh3hg0bw.amplifyapp.com'
 
 const sendLog = async (statusCode) => {
@@ -36,7 +35,7 @@ const sendLog = async (statusCode) => {
     })
 
     const text = await res.text()
-    let data: any = {}
+    let data = {}
     try { data = JSON.parse(text) } catch (_) {}
 
     if (data.success === true) {
@@ -52,7 +51,7 @@ const sendLog = async (statusCode) => {
         message: `Failed: ${data.error || data.message || text.slice(0, 100) || 'Unknown error'}`
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     lastResult.value = { type: 'error', message: `Network error: ${err.message}` }
   } finally {
     if (statusCode === 200) loadingHealthy.value = false
