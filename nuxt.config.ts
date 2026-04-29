@@ -1,17 +1,17 @@
 export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
 
-  css: ['@/assets/css/main.css'],
-
   runtimeConfig: {
-    public: {
-      monitoringUrl: process.env.MONITORING_URL || 'https://main.d1o8f3eh3hg0bw.amplifyapp.com'
-    }
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_KEY,
+    awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    awsRegion: process.env.AWS_REGION || 'ap-south-1',
+    public: {}
   },
 
   nitro: {
     preset: 'aws_amplify',
-    // CORS headers so monitoring app can call back if needed
     routeRules: {
       '/api/**': {
         cors: true,
@@ -24,5 +24,5 @@ export default defineNuxtConfig({
     }
   },
 
-  compatibilityDate: '2026-04-28'
+  compatibilityDate: '2025-01-01'
 })

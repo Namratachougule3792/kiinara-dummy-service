@@ -7,6 +7,9 @@ const loadingHealthy = ref(false)
 const loadingError = ref(false)
 const lastResult = ref(null)
 
+// Hardcode the monitoring URL directly — no server route needed
+const MONITORING_URL = 'https://main.d1o8f3eh3hg0bw.amplifyapp.com'
+
 const sendLog = async (statusCode) => {
   if (!school.value.trim()) {
     alert('Please enter a school name first!')
@@ -26,15 +29,16 @@ const sendLog = async (statusCode) => {
   }
 
   try {
-    const res = await fetch('/api/forward-log', {
+    const res = await fetch(`${MONITORING_URL}/api/collect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
 
-    const data = await res.json()
+    const text = await res.text()
+    let data: any = {}
+    try { data = JSON.parse(text) } catch (_) {}
 
-    // Check for success explicitly, not just absence of error
     if (data.success === true) {
       lastResult.value = {
         type: statusCode === 200 ? 'success' : 'error',
@@ -43,12 +47,12 @@ const sendLog = async (statusCode) => {
           : `🔴 Error log sent for "${payload.school}" → ${service.value}`
       }
     } else {
-      // Show the actual error message from the server
-      const msg = data.error || data.message || JSON.stringify(data)
-      lastResult.value = { type: 'error', message: `Failed: ${msg}` }
+      lastResult.value = {
+        type: 'error',
+        message: `Failed: ${data.error || data.message || text.slice(0, 100) || 'Unknown error'}`
+      }
     }
-
-  } catch (err) {
+  } catch (err: any) {
     lastResult.value = { type: 'error', message: `Network error: ${err.message}` }
   } finally {
     if (statusCode === 200) loadingHealthy.value = false
