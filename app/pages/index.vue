@@ -34,16 +34,20 @@ const sendLog = async (statusCode) => {
 
     const data = await res.json()
 
-    if (data.error) {
-      lastResult.value = { type: 'error', message: `Failed: ${data.error}` }
-    } else {
+    // Check for success explicitly, not just absence of error
+    if (data.success === true) {
       lastResult.value = {
         type: statusCode === 200 ? 'success' : 'error',
         message: statusCode === 200
           ? `✅ Healthy log sent for "${payload.school}" → ${service.value}`
           : `🔴 Error log sent for "${payload.school}" → ${service.value}`
       }
+    } else {
+      // Show the actual error message from the server
+      const msg = data.error || data.message || JSON.stringify(data)
+      lastResult.value = { type: 'error', message: `Failed: ${msg}` }
     }
+
   } catch (err) {
     lastResult.value = { type: 'error', message: `Network error: ${err.message}` }
   } finally {
