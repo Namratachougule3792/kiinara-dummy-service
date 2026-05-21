@@ -34,25 +34,32 @@ const sendLog = async (statusCode) => {
       body: JSON.stringify(payload)
     })
 
-    const text = await res.text()
-    let data = {}
-    try { data = JSON.parse(text) } catch (_) {}
+    if (!res.ok) {
+      const text = await res.text()
+      lastResult.value = { type: 'error', message: `Server error ${res.status}: ${text.slice(0, 100)}` }
+      return
+    }
+
+    const data = await res.json()
 
     if (data.success === true) {
       lastResult.value = {
         type: statusCode === 200 ? 'success' : 'error',
         message: statusCode === 200
-          ? `✅ Healthy log sent for "${payload.school}" → ${service.value}`
-          : `🔴 Error log sent for "${payload.school}" → ${service.value}`
+          ? `Healthy log sent for "${payload.school}" → ${service.value}`
+          : `Error log sent for "${payload.school}" → ${service.value}`
       }
     } else {
       lastResult.value = {
         type: 'error',
-        message: `Failed: ${data.error || data.message || text.slice(0, 100) || 'Unknown error'}`
+        message: `Failed: ${data.error || data.message || JSON.stringify(data)}`
       }
     }
   } catch (err) {
-    lastResult.value = { type: 'error', message: `Network error: ${err.message}` }
+    lastResult.value = {
+      type: 'error',
+      message: `Failed: ${err.message} — check if monitoring app is deployed and running`
+    }
   } finally {
     if (statusCode === 200) loadingHealthy.value = false
     else loadingError.value = false
@@ -92,7 +99,7 @@ const sendLog = async (statusCode) => {
         @click.prevent="sendLog(200)"
         class="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded font-semibold transition-colors"
       >
-        {{ loadingHealthy ? 'Sending...' : '✅ Generate Healthy' }}
+        {{ loadingHealthy ? 'Sending...' : 'Generate Healthy' }}
       </button>
 
       <button
@@ -101,7 +108,7 @@ const sendLog = async (statusCode) => {
         @click.prevent="sendLog(500)"
         class="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded font-semibold transition-colors"
       >
-        {{ loadingError ? 'Sending...' : '🔴 Generate Error' }}
+        {{ loadingError ? 'Sending...' : 'Generate Error' }}
       </button>
     </div>
 
