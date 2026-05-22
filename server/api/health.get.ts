@@ -1,11 +1,15 @@
 export default defineEventHandler(async () => {
-  const statuses = ["Healthy", "Degraded", "Down"]
+  const statuses = ['operational', 'degraded', 'outage']
+
+  const currentStatus =
+    statuses[Math.floor(Math.random() * statuses.length)]
 
   return {
-    service: "Admissions",
-    status: statuses[Math.floor(Math.random() * statuses.length)],
+    service: 'dummy-school-app',
+    status: currentStatus,
     latency: Math.floor(Math.random() * 500),
     requests: Math.floor(Math.random() * 2000),
-    timestamp: new Date()
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
   }
 })
